@@ -3,8 +3,10 @@ package src
 import (
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/revan730/clipper-common/db"
 	commonTypes "github.com/revan730/clipper-common/types"
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
@@ -13,17 +15,27 @@ import (
 type Worker struct {
 	config           *Config
 	rabbitConnection *amqp.Connection
+	databaseClient   *db.DatabaseClient
 	logger           *zap.Logger
 }
 
 // NewWorker creates new copy of worker with provided
 // config and rabbitmq client
 func NewWorker(config *Config, rabbitConnection *amqp.Connection, logger *zap.Logger) *Worker {
-	return &Worker{
+	worker := &Worker{
 		config:           config,
 		rabbitConnection: rabbitConnection,
 		logger:           logger,
 	}
+	dbConfig := commonTypes.DBClientConfig{
+		DBUser:     config.DBUser,
+		DBAddr:     config.DBAddr,
+		DBPassword: config.DBPassword,
+		DB:         config.DB,
+	}
+	dbClient := db.NewDBClient(dbConfig)
+	worker.databaseClient = dbClient
+	return worker
 }
 
 func (w *Worker) logFatal(msg string, err error) {
@@ -41,6 +53,7 @@ func (w *Worker) logInfo(msg string) {
 	w.logger.Info("INFO", zap.String("msg", msg), zap.String("packageLevel", "core"))
 }
 
+// TODO: Move builder image name to config
 func (w *Worker) executeBuilder(gitURL, branch, gcrHost, gcrTag string) ([]byte, error) {
 	out, err := exec.Command("docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock",
 		"-v", w.config.JSONFile+":/opt/secrets/docker-login.json",
@@ -56,23 +69,51 @@ func (w *Worker) executeBuilder(gitURL, branch, gcrHost, gcrTag string) ([]byte,
 	return out, nil
 }
 
+func (w *Worker) writeBuildToDB(repoID int64, success bool, branch, stdout, gcrTag string) error {
+	build := commonTypes.Build{
+		GithubRepoID:  repoID,
+		IsSuccessfull: success,
+		Date:          time.Now(),
+		Branch:        branch,
+		Stdout:        stdout,
+	}
+	err := w.databaseClient.CreateBuild(&build)
+	if err != nil {
+		return err
+	}
+	artifact := commonTypes.BuildArtifact{
+		BuildID: build.ID,
+		Name:    gcrTag,
+	}
+	err = w.databaseClient.CreateBuildArtifact(&artifact)
+	return err
+}
+
+// TODO: Remove debug logs
+// TODO: Refactor strings with sprintf function
 func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 	w.logInfo("Got CI job message:" + CIJob.RepoURL)
 	gcrHost := strings.Split(w.config.GCRURL, "/")[0]
 	repoName := strings.TrimSuffix(strings.TrimPrefix(CIJob.RepoURL, "https://github.com/"),
 		".git")
-	gcrTag := w.config.GCRURL + repoName
+	gcrTag := w.config.GCRURL + repoName + ":" + CIJob.Branch + "-" + CIJob.HeadSHA[:7]
 	repoURL := CIJob.RepoURL
+	username := strings.Split(strings.TrimPrefix(repoURL, "https://github.com/"), "/")[0]
 	if CIJob.AccessToken != "" {
-		repoURL = "https://" + strings.Split(strings.TrimPrefix(repoURL, "https://github.com/"), "/")[0] + ":" + CIJob.AccessToken + "@" + strings.TrimPrefix(CIJob.RepoURL, "https://")
+		repoURL = "https://" + username + ":" + CIJob.AccessToken + "@" + strings.TrimPrefix(CIJob.RepoURL, "https://")
 	}
 	out, err := w.executeBuilder(repoURL, CIJob.Branch, gcrHost, gcrTag)
 	w.logInfo("Stdout:" + string(out))
+	success := true
 	if err != nil {
 		w.logError("Build failed", err)
-		// TODO: Write log to db with failed status
+		success = false
 	}
-	// TODO: Write log to db and create CD job
+	err = w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch, string(out), gcrTag)
+	if err != nil {
+		w.logError("Write build log to db failed", err)
+	}
+	// TODO: Call github status api and create CD job if needed
 }
 
 func (w *Worker) startConsuming() {

@@ -14,6 +14,10 @@ var (
 	rabbitQ    string
 	gcrUrl     string
 	jsonPath   string
+	dbAddr     string
+	db         string
+	dbUser     string
+	dbPass     string
 	logVerbose bool
 )
 
@@ -40,6 +44,10 @@ var startCmd = &cobra.Command{
 			RabbitQueue:   rabbitQ,
 			GCRURL:        gcrUrl,
 			JSONFile:      jsonPath,
+			DBAddr:        dbAddr,
+			DB:            db,
+			DBUser:        dbUser,
+			DBPassword:    dbPass,
 			Verbose:       logVerbose,
 		}
 
@@ -68,6 +76,14 @@ func init() {
 		"", "Set gcr url")
 	startCmd.Flags().StringVarP(&jsonPath, "json", "j",
 		"secrets", "Set path to json auth file")
+	startCmd.Flags().StringVarP(&dbAddr, "postgresAddr", "a",
+		"postgres:5432", "Set PostsgreSQL address")
+	startCmd.Flags().StringVarP(&db, "db", "d",
+		"clipper", "Set PostgreSQL database to use")
+	startCmd.Flags().StringVarP(&dbUser, "user", "u",
+		"clipper", "Set PostgreSQL user to use")
+	startCmd.Flags().StringVarP(&dbPass, "pass", "c",
+		"clipper", "Set PostgreSQL password to use")
 	startCmd.Flags().BoolVarP(&logVerbose, "verbose", "v",
 		false, "Show debug level logs",
 	)
