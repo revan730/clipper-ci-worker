@@ -12,6 +12,8 @@ import (
 var (
 	rabbitAddr string
 	rabbitQ    string
+	gcrUrl     string
+	jsonPath   string
 	logVerbose bool
 )
 
@@ -36,6 +38,8 @@ var startCmd = &cobra.Command{
 		config := &src.Config{
 			RabbitAddress: rabbitAddr,
 			RabbitQueue:   rabbitQ,
+			GCRURL:        gcrUrl,
+			JSONFile:      jsonPath,
 			Verbose:       logVerbose,
 		}
 
@@ -60,6 +64,10 @@ func init() {
 		"amqp://guest:guest@localhost:5672", "Set redis address")
 	startCmd.Flags().StringVarP(&rabbitQ, "queue", "q",
 		"ciJobs", "Set rabbitmq queue name")
+	startCmd.Flags().StringVarP(&gcrUrl, "gcr", "g",
+		"", "Set gcr url")
+	startCmd.Flags().StringVarP(&jsonPath, "json", "j",
+		"secrets", "Set path to json auth file")
 	startCmd.Flags().BoolVarP(&logVerbose, "verbose", "v",
 		false, "Show debug level logs",
 	)

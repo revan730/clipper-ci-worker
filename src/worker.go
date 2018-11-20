@@ -2,6 +2,7 @@ package src
 
 import (
 	"os/exec"
+	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	commonTypes "github.com/revan730/clipper-common/types"
@@ -40,24 +41,38 @@ func (w *Worker) logInfo(msg string) {
 	w.logger.Info("INFO", zap.String("msg", msg), zap.String("packageLevel", "core"))
 }
 
-func (w *Worker) executeDockerBuilder() error {
-	out, err := exec.Command("docker", "run", "hello-world").CombinedOutput()
+func (w *Worker) executeBuilder(gitURL, branch, gcrHost, gcrTag string) ([]byte, error) {
+	out, err := exec.Command("docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock",
+		"-v", w.config.JSONFile+":/opt/secrets/docker-login.json",
+		"ci-builder", gitURL, branch, gcrHost, gcrTag).CombinedOutput()
 	if err != nil {
 		_, ok := err.(*exec.ExitError)
 		if ok == true {
 			w.logInfo("Process exited with non-zero code")
-			return nil
+			return out, err
 		}
-		return err
+		return out, err
 	}
-	w.logInfo("Stdout:" + string(out))
-	return nil
+	return out, nil
 }
 
 func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
-	// TODO: Implement
 	w.logInfo("Got CI job message:" + CIJob.RepoURL)
-	w.executeDockerBuilder()
+	gcrHost := strings.Split(w.config.GCRURL, "/")[0]
+	repoName := strings.TrimSuffix(strings.TrimPrefix(CIJob.RepoURL, "https://github.com/"),
+		".git")
+	gcrTag := w.config.GCRURL + repoName
+	repoURL := CIJob.RepoURL
+	if CIJob.AccessToken != "" {
+		repoURL = "https://" + strings.Split(strings.TrimPrefix(repoURL, "https://github.com/"), "/")[0] + ":" + CIJob.AccessToken + "@" + strings.TrimPrefix(CIJob.RepoURL, "https://")
+	}
+	out, err := w.executeBuilder(repoURL, CIJob.Branch, gcrHost, gcrTag)
+	w.logInfo("Stdout:" + string(out))
+	if err != nil {
+		w.logError("Build failed", err)
+		// TODO: Write log to db with failed status
+	}
+	// TODO: Write log to db and create CD job
 }
 
 func (w *Worker) startConsuming() {
