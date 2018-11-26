@@ -1,11 +1,17 @@
 package src
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/revan730/clipper-ci-worker/types"
 	"github.com/revan730/clipper-common/db"
 	commonTypes "github.com/revan730/clipper-common/types"
 	"github.com/streadway/amqp"
@@ -89,6 +95,43 @@ func (w *Worker) writeBuildToDB(repoID int64, success bool, branch, stdout, gcrT
 	return err
 }
 
+// TODO: Refactor & remove old debug info
+func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success bool) error {
+	client := &http.Client{}
+	url := fmt.Sprintf("https://api.github.com/repos/%s/statuses/%s",
+		repo, sha)
+	w.logInfo("status url:" + url)
+	body := &types.StatusMessage{
+		Description: "Status set by Clipper CI\\CD",
+	}
+	if success == true {
+		body.State = "success"
+	} else {
+		body.State = "failure"
+	}
+	rawBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewBuffer(rawBody)
+	req, err := http.NewRequest("POST", url, buf)
+	if err != nil {
+		return err
+	}
+	req.SetBasicAuth(user, accessToken)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	w.logInfo("Github response body:" + string(respBody))
+	return nil
+}
+
 // TODO: Remove debug logs
 // TODO: Refactor strings with sprintf function
 func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
@@ -112,8 +155,17 @@ func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 	err = w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch, string(out), gcrTag)
 	if err != nil {
 		w.logError("Write build log to db failed", err)
+		return
 	}
-	// TODO: Call github status api and create CD job if needed
+	err = w.writeGithubStatus(username, CIJob.AccessToken, repoName, CIJob.HeadSHA, success)
+	if err != nil {
+		w.logError("Write Github status failed", err)
+		return
+	}
+	if success == false {
+		return
+	}
+	// TODO: Post CD job
 }
 
 func (w *Worker) startConsuming() {
