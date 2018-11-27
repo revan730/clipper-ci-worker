@@ -11,11 +11,12 @@ type Config struct {
 	// ex. eu.gcr.io/rocket-science-1488228/
 	GCRURL string
 	// JsonFile holds path to json file used for docker login
-	JSONFile   string
-	DBAddr     string
-	DB         string
-	DBUser     string
-	DBPassword string
-	CDQueue    string
-	Verbose    bool
+	JSONFile     string
+	DBAddr       string
+	DB           string
+	DBUser       string
+	DBPassword   string
+	CDQueue      string
+	BuilderImage string
+	Verbose      bool
 }

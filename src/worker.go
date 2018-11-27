@@ -61,20 +61,13 @@ func (w *Worker) logInfo(msg string) {
 	w.logger.Info("INFO", zap.String("msg", msg), zap.String("packageLevel", "core"))
 }
 
-// TODO: Move builder image name to config
-func (w *Worker) executeBuilder(gitURL, branch, gcrHost, gcrTag string) ([]byte, error) {
+func (w *Worker) executeBuilder(payload types.BuilderPayload) ([]byte, error) {
 	out, err := exec.Command("docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock",
 		"-v", w.config.JSONFile+":/opt/secrets/docker-login.json",
-		"ci-builder", gitURL, branch, gcrHost, gcrTag).CombinedOutput()
-	if err != nil {
-		_, ok := err.(*exec.ExitError)
-		if ok == true {
-			w.logInfo("Process exited with non-zero code")
-			return out, err
-		}
-		return out, err
-	}
-	return out, nil
+		w.config.BuilderImage, payload.RepoURL, payload.Branch,
+		payload.GCRHost, payload.GCRTag).CombinedOutput()
+
+	return out, err
 }
 
 func (w *Worker) writeBuildToDB(repoID int64, success bool, branch, stdout, gcrTag string) error {
@@ -153,39 +146,51 @@ func (w *Worker) postCDJob(repoID int64, branch, gcrTag string) error {
 		})
 }
 
+func (w *Worker) makeBuilderPayload(CIJob commonTypes.CIJob) types.BuilderPayload {
+	payload := types.BuilderPayload{
+		GCRHost: strings.Split(w.config.GCRURL, "/")[0],
+		Branch:  CIJob.Branch,
+	}
+	payload.RepoName = strings.TrimSuffix(strings.TrimPrefix(CIJob.RepoURL, "https://github.com/"),
+		".git")
+	payload.GCRTag = fmt.Sprintf("%s%s:%s-%s", w.config.GCRURL, payload.RepoName,
+		CIJob.Branch, CIJob.HeadSHA[:7])
+	repoURL := CIJob.RepoURL
+	payload.Username = strings.Split(strings.TrimPrefix(repoURL, "https://github.com/"), "/")[0]
+	if CIJob.AccessToken != "" {
+		repoURL = fmt.Sprintf("https://%s:%s@%s", payload.Username, CIJob.AccessToken,
+			strings.TrimPrefix(CIJob.RepoURL, "https://"))
+	}
+	payload.RepoURL = repoURL
+	return payload
+}
+
 // TODO: Remove debug logs
-// TODO: Refactor strings with sprintf function
 func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 	w.logInfo("Got CI job message:" + CIJob.RepoURL)
-	gcrHost := strings.Split(w.config.GCRURL, "/")[0]
-	repoName := strings.TrimSuffix(strings.TrimPrefix(CIJob.RepoURL, "https://github.com/"),
-		".git")
-	gcrTag := w.config.GCRURL + repoName + ":" + CIJob.Branch + "-" + CIJob.HeadSHA[:7]
-	repoURL := CIJob.RepoURL
-	username := strings.Split(strings.TrimPrefix(repoURL, "https://github.com/"), "/")[0]
-	if CIJob.AccessToken != "" {
-		repoURL = "https://" + username + ":" + CIJob.AccessToken + "@" + strings.TrimPrefix(CIJob.RepoURL, "https://")
-	}
-	out, err := w.executeBuilder(repoURL, CIJob.Branch, gcrHost, gcrTag)
+	builderPayload := w.makeBuilderPayload(CIJob)
+	out, err := w.executeBuilder(builderPayload)
 	w.logInfo("Stdout:" + string(out))
 	success := true
 	if err != nil {
 		w.logError("Build failed", err)
 		success = false
 	}
-	err = w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch, string(out), gcrTag)
+	err = w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch,
+		string(out), builderPayload.GCRTag)
 	if err != nil {
 		w.logError("Write build log to db failed", err)
 		return
 	}
-	err = w.writeGithubStatus(username, CIJob.AccessToken, repoName, CIJob.HeadSHA, success)
+	err = w.writeGithubStatus(builderPayload.Username, CIJob.AccessToken,
+		builderPayload.RepoName, CIJob.HeadSHA, success)
 	if err != nil {
 		w.logError("Write Github status failed", err)
 	}
 	if success == false {
 		return
 	}
-	err = w.postCDJob(CIJob.RepoID, CIJob.Branch, gcrTag)
+	err = w.postCDJob(CIJob.RepoID, CIJob.Branch, builderPayload.GCRTag)
 	if err != nil {
 		w.logError("Post CD job failed", err)
 	}

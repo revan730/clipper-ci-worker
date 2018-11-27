@@ -10,16 +10,17 @@ import (
 )
 
 var (
-	rabbitAddr string
-	rabbitQ    string
-	gcrURL     string
-	jsonPath   string
-	dbAddr     string
-	db         string
-	dbUser     string
-	dbPass     string
-	cdQueue    string
-	logVerbose bool
+	rabbitAddr   string
+	rabbitQ      string
+	gcrURL       string
+	jsonPath     string
+	dbAddr       string
+	db           string
+	dbUser       string
+	dbPass       string
+	cdQueue      string
+	builderImage string
+	logVerbose   bool
 )
 
 func connectToRabbit(addr string) *amqp.Connection {
@@ -51,6 +52,7 @@ var startCmd = &cobra.Command{
 			DBPassword:    dbPass,
 			Verbose:       logVerbose,
 			CDQueue:       cdQueue,
+			BuilderImage:  builderImage,
 		}
 
 		logger := src.NewLogger(logVerbose)
@@ -89,6 +91,8 @@ func init() {
 		"clipper", "Set PostgreSQL password to use")
 	startCmd.Flags().StringVarP(&cdQueue, "cdqueue", "k",
 		"cdJobs", "Set rabbitmq cd jobs queue name")
+	startCmd.Flags().StringVarP(&builderImage, "builder", "b",
+		"ci-builder", "Set docker builder image name")
 	startCmd.Flags().BoolVarP(&logVerbose, "verbose", "v",
 		false, "Show debug level logs",
 	)
