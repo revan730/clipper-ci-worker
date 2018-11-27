@@ -28,4 +28,6 @@ Call worker binary with `start` argument and next parameters.
 | --db (-d)             | clipper                           | PostgreSQL database to use                                |
 | --user (-u)           | clipper                           | PostgreSQL database user                                  |
 | --pass (-c)           | clipper                           | PostgreSQL user's password                                |
+| --cdqueue (-k)        | cdJobs                            | Name of rabbitmq queue to put cd jobs to                  |
+| --builder (-b)        | ci-builder                        | Name of builder docker image                              |
 | --verbose (-v)        | false                             | Show debug level logs                                     |
