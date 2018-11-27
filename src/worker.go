@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Worker holds CI worker logic
 type Worker struct {
 	config           *Config
 	rabbitConnection *amqp.Connection
@@ -239,6 +240,7 @@ func (w *Worker) startConsuming() {
 	<-blockMain
 }
 
+// Run starts CI worker
 func (w *Worker) Run() {
 	w.startConsuming()
 }

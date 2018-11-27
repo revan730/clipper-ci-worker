@@ -32,7 +32,7 @@ func connectToRabbit(addr string) *amqp.Connection {
 	return connection
 }
 
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
 	Use:   "clipper-ci",
 	Short: "CI worker microservice of Clipper CI\\CD",
 }
@@ -63,8 +63,9 @@ var startCmd = &cobra.Command{
 	},
 }
 
+// Execute runs application with provided cli params
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -72,7 +73,7 @@ func Execute() {
 
 func init() {
 	// TODO: Remove short flags
-	RootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(startCmd)
 	startCmd.Flags().StringVarP(&rabbitAddr, "rabbitmq", "r",
 		"amqp://guest:guest@localhost:5672", "Set redis address")
 	startCmd.Flags().StringVarP(&rabbitQ, "queue", "q",
