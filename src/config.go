@@ -16,5 +16,6 @@ type Config struct {
 	DB         string
 	DBUser     string
 	DBPassword string
+	CDQueue    string
 	Verbose    bool
 }

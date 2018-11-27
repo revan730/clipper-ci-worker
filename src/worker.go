@@ -21,6 +21,8 @@ import (
 type Worker struct {
 	config           *Config
 	rabbitConnection *amqp.Connection
+	rabbitChannel    *amqp.Channel
+	CDQueue          amqp.Queue
 	databaseClient   *db.DatabaseClient
 	logger           *zap.Logger
 }
@@ -132,6 +134,25 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	return nil
 }
 
+// TODO: Move all rabbit code to separate package
+func (w *Worker) postCDJob(repoID int64, branch, gcrTag string) error {
+	msg := &commonTypes.CDJob{
+		RepoID: repoID,
+		Branch: branch,
+		GcrTag: gcrTag,
+	}
+	body, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	return w.rabbitChannel.Publish(
+		"", w.CDQueue.Name, false, false,
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(body),
+		})
+}
+
 // TODO: Remove debug logs
 // TODO: Refactor strings with sprintf function
 func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
@@ -160,31 +181,40 @@ func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 	err = w.writeGithubStatus(username, CIJob.AccessToken, repoName, CIJob.HeadSHA, success)
 	if err != nil {
 		w.logError("Write Github status failed", err)
-		return
 	}
 	if success == false {
 		return
 	}
-	// TODO: Post CD job
+	err = w.postCDJob(CIJob.RepoID, CIJob.Branch, gcrTag)
+	if err != nil {
+		w.logError("Post CD job failed", err)
+	}
 }
 
 func (w *Worker) startConsuming() {
 	defer w.rabbitConnection.Close()
-	ch, err := w.rabbitConnection.Channel()
 
+	ch, err := w.rabbitConnection.Channel()
 	if err != nil {
 		w.logFatal("Failed to open channel", err)
 	}
+	w.rabbitChannel = ch
 
 	q, err := ch.QueueDeclare(w.config.RabbitQueue, false, false, false,
 		false, nil)
-
 	if err != nil {
 		w.logFatal("Failed to declare queue", err)
 	}
 
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	cdQueue, err := ch.QueueDeclare(w.config.CDQueue, false, false, false,
+		false, nil)
+	if err != nil {
+		w.logFatal("Failed to declare CD jobs queue", err)
+	}
 
+	w.CDQueue = cdQueue
+
+	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
 	blockMain := make(chan bool)
 
 	go func() {

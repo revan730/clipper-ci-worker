@@ -12,12 +12,13 @@ import (
 var (
 	rabbitAddr string
 	rabbitQ    string
-	gcrUrl     string
+	gcrURL     string
 	jsonPath   string
 	dbAddr     string
 	db         string
 	dbUser     string
 	dbPass     string
+	cdQueue    string
 	logVerbose bool
 )
 
@@ -42,13 +43,14 @@ var startCmd = &cobra.Command{
 		config := &src.Config{
 			RabbitAddress: rabbitAddr,
 			RabbitQueue:   rabbitQ,
-			GCRURL:        gcrUrl,
+			GCRURL:        gcrURL,
 			JSONFile:      jsonPath,
 			DBAddr:        dbAddr,
 			DB:            db,
 			DBUser:        dbUser,
 			DBPassword:    dbPass,
 			Verbose:       logVerbose,
+			CDQueue:       cdQueue,
 		}
 
 		logger := src.NewLogger(logVerbose)
@@ -67,12 +69,13 @@ func Execute() {
 }
 
 func init() {
+	// TODO: Remove short flags
 	RootCmd.AddCommand(startCmd)
 	startCmd.Flags().StringVarP(&rabbitAddr, "rabbitmq", "r",
 		"amqp://guest:guest@localhost:5672", "Set redis address")
 	startCmd.Flags().StringVarP(&rabbitQ, "queue", "q",
-		"ciJobs", "Set rabbitmq queue name")
-	startCmd.Flags().StringVarP(&gcrUrl, "gcr", "g",
+		"ciJobs", "Set rabbitmq ci jobs queue name")
+	startCmd.Flags().StringVarP(&gcrURL, "gcr", "g",
 		"", "Set gcr url")
 	startCmd.Flags().StringVarP(&jsonPath, "json", "j",
 		"secrets", "Set path to json auth file")
@@ -84,6 +87,8 @@ func init() {
 		"clipper", "Set PostgreSQL user to use")
 	startCmd.Flags().StringVarP(&dbPass, "pass", "c",
 		"clipper", "Set PostgreSQL password to use")
+	startCmd.Flags().StringVarP(&cdQueue, "cdqueue", "k",
+		"cdJobs", "Set rabbitmq cd jobs queue name")
 	startCmd.Flags().BoolVarP(&logVerbose, "verbose", "v",
 		false, "Show debug level logs",
 	)
