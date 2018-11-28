@@ -13,28 +13,25 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/revan730/clipper-ci-worker/types"
 	"github.com/revan730/clipper-common/db"
+	"github.com/revan730/clipper-common/queue"
 	commonTypes "github.com/revan730/clipper-common/types"
-	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 )
 
 // Worker holds CI worker logic
 type Worker struct {
-	config           *Config
-	rabbitConnection *amqp.Connection
-	rabbitChannel    *amqp.Channel
-	CDQueue          amqp.Queue
-	databaseClient   *db.DatabaseClient
-	logger           *zap.Logger
+	config         *Config
+	jobsQueue      *queue.Queue
+	databaseClient *db.DatabaseClient
+	logger         *zap.Logger
 }
 
 // NewWorker creates new copy of worker with provided
 // config and rabbitmq client
-func NewWorker(config *Config, rabbitConnection *amqp.Connection, logger *zap.Logger) *Worker {
+func NewWorker(config *Config, logger *zap.Logger) *Worker {
 	worker := &Worker{
-		config:           config,
-		rabbitConnection: rabbitConnection,
-		logger:           logger,
+		config: config,
+		logger: logger,
 	}
 	dbConfig := commonTypes.DBClientConfig{
 		DBUser:     config.DBUser,
@@ -43,6 +40,7 @@ func NewWorker(config *Config, rabbitConnection *amqp.Connection, logger *zap.Lo
 		DB:         config.DB,
 	}
 	dbClient := db.NewDBClient(dbConfig)
+	worker.jobsQueue = queue.NewQueue(config.RabbitAddress)
 	worker.databaseClient = dbClient
 	return worker
 }
@@ -117,10 +115,10 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	}
 	req.SetBasicAuth(user, accessToken)
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -129,23 +127,13 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	return nil
 }
 
-// TODO: Move all rabbit code to separate package
 func (w *Worker) postCDJob(repoID int64, branch, gcrTag string) error {
 	msg := &commonTypes.CDJob{
 		RepoID: repoID,
 		Branch: branch,
 		GcrTag: gcrTag,
 	}
-	body, err := proto.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	return w.rabbitChannel.Publish(
-		"", w.CDQueue.Name, false, false,
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
-		})
+	return w.jobsQueue.PublishCDJob(msg)
 }
 
 func (w *Worker) makeBuilderPayload(CIJob commonTypes.CIJob) types.BuilderPayload {
@@ -199,36 +187,19 @@ func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 }
 
 func (w *Worker) startConsuming() {
-	defer w.rabbitConnection.Close()
-
-	ch, err := w.rabbitConnection.Channel()
-	if err != nil {
-		w.logFatal("Failed to open channel", err)
-	}
-	w.rabbitChannel = ch
-
-	q, err := ch.QueueDeclare(w.config.RabbitQueue, false, false, false,
-		false, nil)
-	if err != nil {
-		w.logFatal("Failed to declare queue", err)
-	}
-
-	cdQueue, err := ch.QueueDeclare(w.config.CDQueue, false, false, false,
-		false, nil)
-	if err != nil {
-		w.logFatal("Failed to declare CD jobs queue", err)
-	}
-
-	w.CDQueue = cdQueue
-
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	defer w.jobsQueue.Close()
 	blockMain := make(chan bool)
 
+	ciMsgs, err := w.jobsQueue.MakeCIMsgChan()
+	if err != nil {
+		w.logFatal("Failed to create CI jobs channel", err)
+	}
+
 	go func() {
-		for m := range msgs {
-			w.logger.Info("Received message: ", zap.ByteString("body", m.Body))
+		for m := range ciMsgs {
+			w.logger.Info("Received message: ", zap.ByteString("body", m))
 			jobMsg := commonTypes.CIJob{}
-			err := proto.Unmarshal(m.Body, &jobMsg)
+			err := proto.Unmarshal(m, &jobMsg)
 			if err != nil {
 				w.logError("Failed to unmarshal job message", err)
 				continue

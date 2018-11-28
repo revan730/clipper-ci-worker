@@ -14,6 +14,10 @@ github.com/revan730/clipper-common v0.0.0-20181127162703-e3005eae5dad h1:Efm9CaN
 github.com/revan730/clipper-common v0.0.0-20181127162703-e3005eae5dad/go.mod h1:zhvrBe4cSeLo8kz6FZOLLFrDBQpMuhzwsf8PrPgF/3A=
 github.com/revan730/clipper-common v0.0.0-20181127164352-36eb826b3bf6 h1:FFrbqGpHBw37QYaJZORxFgBTrC6Q7YxE9DkUZZ2iTKE=
 github.com/revan730/clipper-common v0.0.0-20181127164352-36eb826b3bf6/go.mod h1:zhvrBe4cSeLo8kz6FZOLLFrDBQpMuhzwsf8PrPgF/3A=
+github.com/revan730/clipper-common v0.0.0-20181128141105-e570675113ab h1:3MjiEjXj2U2qDWeNfeyL2cXnA2OoiaXI5cnql9VIn40=
+github.com/revan730/clipper-common v0.0.0-20181128141105-e570675113ab/go.mod h1:pF9vSCEZV5GAKwEeuXanWS01EQ8DH2ZyoUQOJDIVp5Y=
+github.com/revan730/clipper-common v0.0.0-20181128141812-c35e049f0116 h1:KRm/4PjgF5uXxgjokl9XBjiS+un/WEhPHjVGxygzyyc=
+github.com/revan730/clipper-common v0.0.0-20181128141812-c35e049f0116/go.mod h1:pF9vSCEZV5GAKwEeuXanWS01EQ8DH2ZyoUQOJDIVp5Y=
 github.com/spf13/cobra v0.0.3 h1:ZlrZ4XsMRm04Fr5pSFxBgfND2EBVa1nLpiy1stUsX/8=
 github.com/spf13/cobra v0.0.3/go.mod h1:1l0Ry5zgKvJasoi3XT1TypsSe7PqH0Sj9dhYf7v3XqQ=
 github.com/spf13/pflag v1.0.3 h1:zPAT6CGy6wXeQ7NtTnaTerfKOsV6V6F8agHXFiazDkg=

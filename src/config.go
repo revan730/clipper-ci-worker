@@ -4,8 +4,6 @@ package src
 type Config struct {
 	// RabbitAddress is used for rabbitmq connection
 	RabbitAddress string
-	// RabbitQueue name to get jobs from
-	RabbitQueue string
 	// GCRURL is full url of used GCR registry
 	// in form of gcr regional url + project name
 	// ex. eu.gcr.io/rocket-science-1488228/
@@ -16,7 +14,6 @@ type Config struct {
 	DB           string
 	DBUser       string
 	DBPassword   string
-	CDQueue      string
 	BuilderImage string
 	Verbose      bool
 }

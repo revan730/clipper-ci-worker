@@ -21,13 +21,11 @@ Call worker binary with `start` argument and next parameters.
 | Parameter (short)     | Default                           | Usage                                                     |
 |-----------------------|-----------------------------------|-----------------------------------------------------------|
 | --rabbitmq (-r)       | amqp://guest:guest@localhost:5672 | rabbitmq connection URL                                   |
-| --queue (-q)          | ciJobs                            | Name of rabbitmq queue to get ci jobs from                |
 | --gcr (-g)            | <not set>                         | Your GCR URL                                              |
 | --json (-j)           | secrets                           | Path to your GCP service account json credentials file    |
 | --postgresAddr (-a)   | postgres:5432                     | PostgreSQL address                                        |
 | --db (-d)             | clipper                           | PostgreSQL database to use                                |
 | --user (-u)           | clipper                           | PostgreSQL database user                                  |
 | --pass (-c)           | clipper                           | PostgreSQL user's password                                |
-| --cdqueue (-k)        | cdJobs                            | Name of rabbitmq queue to put cd jobs to                  |
 | --builder (-b)        | ci-builder                        | Name of builder docker image                              |
 | --verbose (-v)        | false                             | Show debug level logs                                     |
