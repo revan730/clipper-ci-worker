@@ -99,6 +99,7 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	w.logInfo("status url:" + url)
 	body := &types.StatusMessage{
 		Description: "Status set by Clipper CI\\CD",
+		Context:     "ci-build",
 	}
 	if success == true {
 		body.State = "success"

@@ -4,6 +4,7 @@ package types
 type StatusMessage struct {
 	State       string `json:"state"`
 	Description string `json:"description"`
+	Context     string `json:"context"`
 }
 
 // BuilderPayload is used to provide environment args to docker builder
