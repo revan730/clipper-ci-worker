@@ -33,7 +33,7 @@ func NewWorker(config *Config, logger *zap.Logger) *Worker {
 		config: config,
 		logger: logger,
 	}
-	dbConfig := commonTypes.PGClientConfig{
+	dbConfig := types.PGClientConfig{
 		DBUser:     config.DBUser,
 		DBAddr:     config.DBAddr,
 		DBPassword: config.DBPassword,

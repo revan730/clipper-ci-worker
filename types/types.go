@@ -16,3 +16,10 @@ type BuilderPayload struct {
 	GCRTag   string
 	Username string
 }
+
+type PGClientConfig struct {
+	DBAddr     string
+	DB         string
+	DBUser     string
+	DBPassword string
+}
