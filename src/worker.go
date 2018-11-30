@@ -22,7 +22,7 @@ import (
 type Worker struct {
 	config         *Config
 	jobsQueue      *queue.Queue
-	databaseClient *db.DatabaseClient
+	databaseClient db.DatabaseClient
 	logger         *zap.Logger
 }
 
@@ -33,13 +33,13 @@ func NewWorker(config *Config, logger *zap.Logger) *Worker {
 		config: config,
 		logger: logger,
 	}
-	dbConfig := commonTypes.DBClientConfig{
+	dbConfig := commonTypes.PGClientConfig{
 		DBUser:     config.DBUser,
 		DBAddr:     config.DBAddr,
 		DBPassword: config.DBPassword,
 		DB:         config.DB,
 	}
-	dbClient := db.NewDBClient(dbConfig)
+	dbClient := db.NewPGClient(dbConfig)
 	worker.jobsQueue = queue.NewQueue(config.RabbitAddress)
 	worker.databaseClient = dbClient
 	return worker
