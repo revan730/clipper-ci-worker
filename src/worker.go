@@ -12,7 +12,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/revan730/clipper-ci-worker/types"
-	"github.com/revan730/clipper-common/db"
+	"github.com/revan730/clipper-ci-worker/db"
 	"github.com/revan730/clipper-common/queue"
 	commonTypes "github.com/revan730/clipper-common/types"
 	"go.uber.org/zap"
