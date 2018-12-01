@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/revan730/clipper-ci-worker/types"
 	commonTypes "github.com/revan730/clipper-common/types"
 	"go.uber.org/zap"
