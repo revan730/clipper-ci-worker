@@ -5,23 +5,18 @@ import (
 
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
-	"github.com/revan730/clipper-common/types"
+	"github.com/revan730/clipper-ci-worker/types"
 )
 
 // PostgresClient provides data access layer to objects in Postgres.
 // implements DatabaseClient interface
 type PostgresClient struct {
-	pg         *pg.DB
-	adminLogin string
-	adminPass  string
+	pg *pg.DB
 }
 
 // NewPGClient creates new copy of PostgresClient
 func NewPGClient(config types.PGClientConfig) *PostgresClient {
-	DBClient := &PostgresClient{
-		adminLogin: config.AdminLogin,
-		adminPass:  config.AdminPassword,
-	}
+	DBClient := &PostgresClient{}
 	pgdb := pg.Connect(&pg.Options{
 		User:         config.DBUser,
 		Addr:         config.DBAddr,
@@ -71,6 +66,22 @@ func (d *PostgresClient) FindAllBuilds(repoID int64, q url.Values) ([]types.Buil
 		Select()
 
 	return builds, err
+}
+
+// FindBuildByID finds build with provided id
+func (d *PostgresClient) FindBuildByID(buildID int64) (*types.Build, error) {
+	build := &types.Build{
+		ID: buildID,
+	}
+
+	err := d.pg.Select(build)
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return build, nil
 }
 
 // CreateBuildArtifact creates build artifact record from provided struct

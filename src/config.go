@@ -2,6 +2,7 @@ package src
 
 // Config represents configuration for application
 type Config struct {
+	Port int
 	// RabbitAddress is used for rabbitmq connection
 	RabbitAddress string
 	// GCRURL is full url of used GCR registry

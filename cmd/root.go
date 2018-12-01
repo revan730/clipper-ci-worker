@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	serverPort   int
 	rabbitAddr   string
 	gcrURL       string
 	jsonPath     string
@@ -30,6 +31,7 @@ var startCmd = &cobra.Command{
 	Short: "Start worker",
 	Run: func(cmd *cobra.Command, args []string) {
 		config := &src.Config{
+			Port:          serverPort,
 			RabbitAddress: rabbitAddr,
 			GCRURL:        gcrURL,
 			JSONFile:      jsonPath,
@@ -59,6 +61,8 @@ func Execute() {
 func init() {
 	// TODO: Remove short flags
 	rootCmd.AddCommand(startCmd)
+	startCmd.Flags().IntVarP(&serverPort, "port", "p", 8080,
+		"Application TCP port")
 	startCmd.Flags().StringVarP(&rabbitAddr, "rabbitmq", "r",
 		"amqp://guest:guest@localhost:5672", "Set redis address")
 	startCmd.Flags().StringVarP(&gcrURL, "gcr", "g",
