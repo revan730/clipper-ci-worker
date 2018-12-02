@@ -16,7 +16,7 @@ func (s *Server) GetBuild(ctx context.Context, in *commonTypes.Build) (*commonTy
 		return &commonTypes.Build{}, status.New(http.StatusInternalServerError, "").Err()
 	}
 	if build == nil {
-		return &commonTypes.Build{}, status.New(http.StatusBadRequest, "repo id is not int").Err()
+		return &commonTypes.Build{}, status.New(http.StatusNotFound, "repo not found").Err()
 	}
 	timestamp, _ := ptypes.TimestampProto(build.Date)
 	protoBuild := &commonTypes.Build{

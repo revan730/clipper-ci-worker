@@ -62,7 +62,7 @@ func init() {
 	// TODO: Remove short flags
 	rootCmd.AddCommand(startCmd)
 	startCmd.Flags().IntVarP(&serverPort, "port", "p", 8080,
-		"Application TCP port")
+		"Api gRPC port")
 	startCmd.Flags().StringVarP(&rabbitAddr, "rabbitmq", "r",
 		"amqp://guest:guest@localhost:5672", "Set redis address")
 	startCmd.Flags().StringVarP(&gcrURL, "gcr", "g",
