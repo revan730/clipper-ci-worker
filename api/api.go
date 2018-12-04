@@ -63,5 +63,5 @@ func (s *Server) Run() {
 	types.RegisterCIAPIServer(grpcServer, s)
 	if err := grpcServer.Serve(lis); err != nil {
 		s.logFatal("failed to serve: %s", err)
-	  }
+	}
 }
