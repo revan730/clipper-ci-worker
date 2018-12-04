@@ -1,8 +1,6 @@
 package db
 
 import (
-	"net/url"
-
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
 	"github.com/revan730/clipper-ci-worker/types"
@@ -57,12 +55,15 @@ func (d *PostgresClient) CreateBuild(b *types.Build) error {
 // FindAllBuilds returns all builds for provided repo id
 // with pagination support (by passing query params of request)
 // TODO: don't select stdouts here?
-func (d *PostgresClient) FindAllBuilds(repoID int64, q url.Values) ([]types.Build, error) {
-	var builds []types.Build
+func (d *PostgresClient) FindAllBuilds(repoID int64, branch string, page, limit int64) ([]*types.Build, error) {
+	var builds []*types.Build
+	offset := int((page - 1) * limit)
 
 	err := d.pg.Model(&builds).
-		Apply(orm.Pagination(q)).
 		Where("github_repo_id = ?", repoID).
+		Where("branch = ?", branch).
+		Limit(int(limit)).
+		Offset(offset).
 		Select()
 
 	return builds, err

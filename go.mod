@@ -9,7 +9,7 @@ require (
 	github.com/golang/lint v0.0.0-20181026193005-c67002cb31c3 // indirect
 	github.com/golang/protobuf v1.2.0
 	github.com/mattn/go-isatty v0.0.4 // indirect
-	github.com/revan730/clipper-common v0.0.0-20181204150301-e722a1410b1c
+	github.com/revan730/clipper-common v0.0.0-20181204160023-04fc90281225
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/streadway/amqp v0.0.0-20181107104731-27835f1a64e9
