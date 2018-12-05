@@ -11,7 +11,7 @@ import (
 // Worker holds CI worker logic
 type Worker struct {
 	config         *Config
-	jobsQueue      *queue.Queue
+	jobsQueue      queue.Queue
 	databaseClient db.DatabaseClient
 	apiServer *api.Server
 	logger         *zap.Logger
@@ -31,7 +31,7 @@ func NewWorker(config *Config, logger *zap.Logger) *Worker {
 		DB:         config.DB,
 	}
 	dbClient := db.NewPGClient(dbConfig)
-	worker.jobsQueue = queue.NewQueue(config.RabbitAddress)
+	worker.jobsQueue = queue.NewRMQQueue(config.RabbitAddress)
 	worker.databaseClient = dbClient
 	apiConfig := api.Config{
 		Port: config.Port,
