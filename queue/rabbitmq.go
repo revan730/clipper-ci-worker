@@ -81,7 +81,7 @@ func (q *RMQQueue) PublishCDJob(jobMsg *commonTypes.CDJob) error {
 }
 
 // makeMsgChan creates channel to retranslate message bodies to
-func (q *RMQQueue) makeMsgChan(queue string) (chan []byte, error) {
+func (q *RMQQueue) makeMsgChan(queue string) (<-chan []byte, error) {
 	incomingMsgs, err := q.channel.Consume(queue, "", true, false, false, false, nil)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (q *RMQQueue) makeMsgChan(queue string) (chan []byte, error) {
 }
 
 // MakeCIMsgChan creates channel with raw CI job messages
-func (q *RMQQueue) MakeCIMsgChan() (chan []byte, error) {
+func (q *RMQQueue) MakeCIMsgChan() (<-chan []byte, error) {
 	return q.makeMsgChan(q.CIJobsQueue.Name)
 }
 

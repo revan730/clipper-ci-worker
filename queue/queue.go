@@ -8,5 +8,5 @@ import (
 type Queue interface {
 	Close()
 	PublishCDJob(jobMsg *commonTypes.CDJob) error
-	MakeCIMsgChan() (chan []byte, error)
+	MakeCIMsgChan() (<-chan []byte, error)
 }
