@@ -25,7 +25,7 @@ func (w *Worker) executeBuilder(payload types.BuilderPayload) ([]byte, error) {
 	return out, err
 }
 
-func (w *Worker) writeBuildToDB(repoID int64, success bool, branch, stdout, gcrTag string) error {
+func (w *Worker) writeBuildToDB(repoID int64, success bool, branch, stdout, gcrTag string) (int64, error) {
 	build := types.Build{
 		GithubRepoID:  repoID,
 		IsSuccessfull: success,
@@ -35,14 +35,14 @@ func (w *Worker) writeBuildToDB(repoID int64, success bool, branch, stdout, gcrT
 	}
 	err := w.databaseClient.CreateBuild(&build)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	artifact := types.BuildArtifact{
 		BuildID: build.ID,
 		Name:    gcrTag,
 	}
 	err = w.databaseClient.CreateBuildArtifact(&artifact)
-	return err
+	return artifact.ID, err
 }
 
 // TODO: Refactor & remove old debug info
@@ -83,11 +83,11 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	return nil
 }
 
-func (w *Worker) postCDJob(repoID int64, branch, gcrTag string) error {
+func (w *Worker) postCDJob(repoID int64, branch string, artifactID int64) error {
 	msg := &commonTypes.CDJob{
-		RepoID: repoID,
-		Branch: branch,
-		GcrTag: gcrTag,
+		RepoID:     repoID,
+		Branch:     branch,
+		ArtifactID: artifactID,
 	}
 	return w.jobsQueue.PublishCDJob(msg)
 }
@@ -122,7 +122,7 @@ func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 		w.logError("Build failed", err)
 		success = false
 	}
-	err = w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch,
+	artifactID, err := w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch,
 		string(out), builderPayload.GCRTag)
 	if err != nil {
 		w.logError("Write build log to db failed", err)
@@ -136,7 +136,7 @@ func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
 	if success == false {
 		return
 	}
-	err = w.postCDJob(CIJob.RepoID, CIJob.Branch, builderPayload.GCRTag)
+	err = w.postCDJob(CIJob.RepoID, CIJob.Branch, artifactID)
 	if err != nil {
 		w.logError("Post CD job failed", err)
 	}
