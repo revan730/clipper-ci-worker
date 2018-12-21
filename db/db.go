@@ -12,5 +12,6 @@ type DatabaseClient interface {
 	FindAllBuilds(repoID int64, branch string, page, limit int64) ([]*types.Build, error)
 	CreateBuildArtifact(b *types.BuildArtifact) error
 	FindBuildArtifact(buildID int64) (*types.BuildArtifact, error)
+	FindBuildArtifactByID(ID int64) (*types.BuildArtifact, error)
 	FindBuildByID(buildID int64) (*types.Build, error)
 }

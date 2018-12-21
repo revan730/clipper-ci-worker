@@ -100,3 +100,19 @@ func (d *PostgresClient) FindBuildArtifact(buildID int64) (*types.BuildArtifact,
 
 	return buildArtifact, err
 }
+
+// FindBuildArtifactByID returns build artifact with provided id
+func (d *PostgresClient) FindBuildArtifactByID(ID int64) (*types.BuildArtifact, error) {
+	buildArtifact := &types.BuildArtifact{
+		ID: ID,
+	}
+
+	err := d.pg.Select(buildArtifact)
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return buildArtifact, nil
+}
