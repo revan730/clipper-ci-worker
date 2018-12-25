@@ -11,7 +11,7 @@ import (
 func (s *Server) GetBuildArtifact(ctx context.Context, in *commonTypes.BuildArtifact) (*commonTypes.BuildArtifact, error) {
 	artifact, err := s.databaseClient.FindBuildArtifact(in.BuildID)
 	if err != nil {
-		s.logError("Find build artifact error", err)
+		s.log.Error("Find build artifact error", err)
 		return &commonTypes.BuildArtifact{}, status.New(http.StatusInternalServerError, "").Err()
 	}
 	if artifact == nil {
@@ -28,7 +28,7 @@ func (s *Server) GetBuildArtifact(ctx context.Context, in *commonTypes.BuildArti
 func (s *Server) GetBuildArtifactByID(ctx context.Context, in *commonTypes.BuildArtifact) (*commonTypes.BuildArtifact, error) {
 	artifact, err := s.databaseClient.FindBuildArtifactByID(in.ID)
 	if err != nil {
-		s.logError("Find build artifact error", err)
+		s.log.Error("Find build artifact error", err)
 		return &commonTypes.BuildArtifact{}, status.New(http.StatusInternalServerError, "").Err()
 	}
 	if artifact == nil {

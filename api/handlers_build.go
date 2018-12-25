@@ -25,7 +25,7 @@ func buildToProto(build *types.Build) *commonTypes.Build {
 func (s *Server) GetBuild(ctx context.Context, in *commonTypes.Build) (*commonTypes.Build, error) {
 	build, err := s.databaseClient.FindBuildByID(in.ID)
 	if err != nil {
-		s.logError("Find build error", err)
+		s.log.Error("Find build error", err)
 		return &commonTypes.Build{}, status.New(http.StatusInternalServerError, "").Err()
 	}
 	if build == nil {
@@ -37,7 +37,7 @@ func (s *Server) GetBuild(ctx context.Context, in *commonTypes.Build) (*commonTy
 func (s *Server) GetAllBuilds(ctx context.Context, in *commonTypes.BuildsQuery) (*commonTypes.BuildsArray, error) {
 	builds, err := s.databaseClient.FindAllBuilds(in.RepoID, in.Branch, in.Page, in.Limit)
 	if err != nil {
-		s.logError("Find all builds error", err)
+		s.log.Error("Find all builds error", err)
 		return &commonTypes.BuildsArray{}, status.New(http.StatusInternalServerError, "").Err()
 	}
 	protoBuilds := &commonTypes.BuildsArray{}

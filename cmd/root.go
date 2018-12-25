@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/revan730/clipper-ci-worker/src"
+	"github.com/revan730/clipper-ci-worker/log"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ var startCmd = &cobra.Command{
 			BuilderImage:  builderImage,
 		}
 
-		logger := src.NewLogger(logVerbose)
+		logger := log.NewLogger(logVerbose)
 
 		worker := src.NewWorker(config, logger)
 		worker.Run()

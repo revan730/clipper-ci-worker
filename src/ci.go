@@ -13,7 +13,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/revan730/clipper-ci-worker/types"
 	commonTypes "github.com/revan730/clipper-common/types"
-	"go.uber.org/zap"
 )
 
 func (w *Worker) executeBuilder(payload types.BuilderPayload) ([]byte, error) {
@@ -50,7 +49,7 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	client := &http.Client{}
 	url := fmt.Sprintf("https://api.github.com/repos/%s/statuses/%s",
 		repo, sha)
-	w.logInfo("status url:" + url)
+	w.log.Info("status url:" + url)
 	body := &types.StatusMessage{
 		Description: "Status set by Clipper CI\\CD",
 		Context:     "ci-build",
@@ -79,7 +78,7 @@ func (w *Worker) writeGithubStatus(user, accessToken, repo, sha string, success 
 	if err != nil {
 		return err
 	}
-	w.logInfo("Github response body:" + string(respBody))
+	w.log.Info("Github response body:" + string(respBody))
 	return nil
 }
 
@@ -113,32 +112,32 @@ func (w *Worker) makeBuilderPayload(CIJob commonTypes.CIJob) types.BuilderPayloa
 
 // TODO: Remove debug logs
 func (w *Worker) executeCIJob(CIJob commonTypes.CIJob) {
-	w.logInfo("Got CI job message:" + CIJob.RepoURL)
+	w.log.Info("Got CI job message:" + CIJob.RepoURL)
 	builderPayload := w.makeBuilderPayload(CIJob)
 	out, err := w.executeBuilder(builderPayload)
-	w.logInfo("Stdout:" + string(out))
+	w.log.Info("Stdout:" + string(out))
 	success := true
 	if err != nil {
-		w.logError("Build failed", err)
+		w.log.Error("Build failed", err)
 		success = false
 	}
 	artifactID, err := w.writeBuildToDB(CIJob.RepoID, success, CIJob.Branch,
 		string(out), builderPayload.GCRTag)
 	if err != nil {
-		w.logError("Write build log to db failed", err)
+		w.log.Error("Write build log to db failed", err)
 		return
 	}
 	err = w.writeGithubStatus(builderPayload.Username, CIJob.AccessToken,
 		builderPayload.RepoName, CIJob.HeadSHA, success)
 	if err != nil {
-		w.logError("Write Github status failed", err)
+		w.log.Error("Write Github status failed", err)
 	}
 	if success == false {
 		return
 	}
 	err = w.postCDJob(CIJob.RepoID, CIJob.Branch, artifactID)
 	if err != nil {
-		w.logError("Post CD job failed", err)
+		w.log.Error("Post CD job failed", err)
 	}
 }
 
@@ -148,22 +147,22 @@ func (w *Worker) startConsuming() {
 
 	ciMsgs, err := w.jobsQueue.MakeCIMsgChan()
 	if err != nil {
-		w.logFatal("Failed to create CI jobs channel", err)
+		w.log.Fatal("Failed to create CI jobs channel", err)
 	}
 
 	go func() {
 		for m := range ciMsgs {
-			w.logger.Info("Received message: ", zap.ByteString("body", m))
+			w.log.Info("Received message: " + string(m))
 			jobMsg := commonTypes.CIJob{}
 			err := proto.Unmarshal(m, &jobMsg)
 			if err != nil {
-				w.logError("Failed to unmarshal job message", err)
+				w.log.Error("Failed to unmarshal job message", err)
 				continue
 			}
 			go w.executeCIJob(jobMsg)
 		}
 	}()
 
-	w.logInfo("Worker started")
+	w.log.Info("Worker started")
 	<-blockMain
 }
