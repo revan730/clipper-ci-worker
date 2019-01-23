@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/revan730/clipper-ci-worker/src"
 	"github.com/revan730/clipper-ci-worker/log"
+	"github.com/revan730/clipper-ci-worker/src"
 	"github.com/spf13/cobra"
 )
 
@@ -64,21 +64,21 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 	startCmd.Flags().IntVarP(&serverPort, "port", "p", 8080,
 		"Api gRPC port")
-	startCmd.Flags().StringVarP(&rabbitAddr, "rabbitmq", "r",
-		"amqp://guest:guest@localhost:5672", "Set redis address")
-	startCmd.Flags().StringVarP(&gcrURL, "gcr", "g",
+	startCmd.Flags().StringVarP(&rabbitAddr, "rabbitmq", "",
+		"amqp://guest:guest@localhost:5672", "Set rabbitmq address")
+	startCmd.Flags().StringVarP(&gcrURL, "gcr", "",
 		"", "Set gcr url")
-	startCmd.Flags().StringVarP(&jsonPath, "json", "j",
+	startCmd.Flags().StringVarP(&jsonPath, "json", "",
 		"secrets", "Set path to json auth file")
-	startCmd.Flags().StringVarP(&dbAddr, "postgresAddr", "a",
+	startCmd.Flags().StringVarP(&dbAddr, "dbAddr", "",
 		"postgres:5432", "Set PostsgreSQL address")
-	startCmd.Flags().StringVarP(&db, "db", "d",
+	startCmd.Flags().StringVarP(&db, "db", "",
 		"clipper", "Set PostgreSQL database to use")
-	startCmd.Flags().StringVarP(&dbUser, "user", "u",
+	startCmd.Flags().StringVarP(&dbUser, "user", "",
 		"clipper", "Set PostgreSQL user to use")
-	startCmd.Flags().StringVarP(&dbPass, "pass", "c",
+	startCmd.Flags().StringVarP(&dbPass, "pass", "",
 		"clipper", "Set PostgreSQL password to use")
-	startCmd.Flags().StringVarP(&builderImage, "builder", "b",
+	startCmd.Flags().StringVarP(&builderImage, "builder", "",
 		"ci-builder", "Set docker builder image name")
 	startCmd.Flags().BoolVarP(&logVerbose, "verbose", "v",
 		false, "Show debug level logs",
