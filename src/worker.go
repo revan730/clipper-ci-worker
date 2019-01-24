@@ -43,6 +43,6 @@ func NewWorker(config *Config, logger log.Logger) *Worker {
 
 // Run starts CI worker
 func (w *Worker) Run() {
-	w.apiServer.Run()
+	go w.apiServer.Run()
 	w.startConsuming()
 }
