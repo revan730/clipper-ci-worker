@@ -19,7 +19,7 @@ docker build -t foobar .
 if [ $? -eq 0 ] # build successfull
 then
 docker tag foobar $TAG
-docker login -u _json_key --password-stdin https://$GCR_HOSTNAME < /opt/secrets/docker-login.json
+cat /opt/secrets/docker-login.json | docker login -u _json_key --password-stdin https://$GCR_HOSTNAME
 #docker login -u _json_key -p "$(cat /opt/secrets/docker-login.json)" https://$GCR_HOSTNAME
 docker push $TAG
 
