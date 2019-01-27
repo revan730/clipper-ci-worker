@@ -40,10 +40,16 @@ func (s *Server) GetAllBuilds(ctx context.Context, in *commonTypes.BuildsQuery) 
 		s.log.Error("Find all builds error", err)
 		return &commonTypes.BuildsArray{}, status.New(http.StatusInternalServerError, "").Err()
 	}
+	count, err := s.databaseClient.FindBuildsCount(in.RepoID, in.Branch)
+	if err != nil {
+		s.log.Error("Find builds count error", err)
+		return &commonTypes.BuildsArray{}, status.New(http.StatusInternalServerError, "").Err()
+	}
 	protoBuilds := &commonTypes.BuildsArray{}
 	for _, build := range builds {
 		protoBuild := buildToProto(build)
 		protoBuilds.Builds = append(protoBuilds.Builds, protoBuild)
 	}
+	protoBuilds.Total = count
 	return protoBuilds, nil
 }

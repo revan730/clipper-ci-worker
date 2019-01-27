@@ -69,6 +69,14 @@ func (d *PostgresClient) FindAllBuilds(repoID int64, branch string, page, limit 
 	return builds, err
 }
 
+func (d *PostgresClient) FindBuildsCount(repoID int64, branch string) (int64, error) {
+	count, err := d.pg.Model(&types.Build{}).
+		Where("github_repo_id = ?", repoID).
+		Where("branch = ?", branch).
+		Count()
+	return int64(count), err
+}
+
 // FindBuildByID finds build with provided id
 func (d *PostgresClient) FindBuildByID(buildID int64) (*types.Build, error) {
 	build := &types.Build{
