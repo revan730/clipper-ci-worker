@@ -15,4 +15,6 @@ type DatabaseClient interface {
 	FindBuildArtifact(buildID int64) (*types.BuildArtifact, error)
 	FindBuildArtifactByID(ID int64) (*types.BuildArtifact, error)
 	FindBuildByID(buildID int64) (*types.Build, error)
+	FindAllBuildArtifacts(repoID int64, branch string, page, limit int64) ([]*types.BuildArtifact, error)
+	FindBuildArtifactsCount(repoID int64, branch string) (int64, error)
 }

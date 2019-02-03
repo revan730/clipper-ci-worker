@@ -93,6 +93,34 @@ func (d *PostgresClient) FindBuildByID(buildID int64) (*types.Build, error) {
 	return build, nil
 }
 
+func (d *PostgresClient) FindAllBuildArtifacts(repoID int64, branch string, page, limit int64) ([]*types.BuildArtifact, error) {
+	var artifacts []*types.BuildArtifact
+	var buildIds []int
+	offset := int((page - 1) * limit)
+
+	err := d.pg.Model((*types.Build)(nil)).
+		Where("github_repo_id = ?", repoID).
+		Where("branch = ?", branch).
+		ColumnExpr("array_agg(id)").
+		Select(pg.Array(&buildIds))
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.pg.Model(&artifacts).
+		Where("build_id in (?)", pg.In(buildIds)).
+		Limit(int(limit)).
+		Offset(offset).
+		Select()
+
+	return artifacts, err
+}
+
+func (d *PostgresClient) FindBuildArtifactsCount(repoID int64, branch string) (int64, error) {
+	// TODO: Won't work if there can be more than one artifact per build
+	return d.FindBuildsCount(repoID, branch)
+}
+
 // CreateBuildArtifact creates build artifact record from provided struct
 func (d *PostgresClient) CreateBuildArtifact(b *types.BuildArtifact) error {
 	return d.pg.Insert(b)
